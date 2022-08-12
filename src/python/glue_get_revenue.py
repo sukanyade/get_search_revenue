@@ -9,24 +9,26 @@ from awsglue.transforms import *
 from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from pyspark.sql import functions as pyspark_sql_funcs
-
-import sys
 from awsglue.transforms import *
 from awsglue.utils import getResolvedOptions
-from pyspark.context import SparkContext
-from awsglue.context import GlueContext
 from awsglue.job import Job
 
 ## @params: [JOB_NAME]
-# source_bucket_name = getResolvedOptions(sys.argv, ['source_bucket_name'])
-# source_key = getResolvedOptions(sys.argv, ['key'])
-# target_bucket_name = getResolvedOptions(sys.argv, ['target_bucket_name'])
-# target_prefix = getResolvedOptions(sys.argv, ['target_folder'])
+args = getResolvedOptions(sys.argv,
+                          ['source_bucket_name',
+                            'key',
+                            'target_bucket_name',
+                            'target_folder'
+                           ])
+source_bucket_name = args['source_bucket_name']
+source_key = args['key']
+target_bucket_name = args ['target_bucket_name']
+target_prefix = args['target_folder']
 
-# sc = SparkContext()
-# glueContext = GlueContext(sc)
-# spark = glueContext.spark_session
-# job = Job(glueContext)
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
 
 try:
     from pyspark.sql import functions as pyspark_sql_funcs
@@ -88,13 +90,6 @@ class DataProcessingJob(Help):
 
     def commit(self):
         pass
-
-    resolved_options = {
-        "source_bucket_name": "cxdl4-sbx-curated-us-west-2",
-        "key": "/test_suk/data.tsv",
-        "target_bucket_name": "cxdl4-sbx-curated-us-west-2",
-        "target_folder": "output_data"
-    }
 
     def get_file_from_path(self, source_bucket_name: str = None, key: str = None):
         """
@@ -211,9 +206,7 @@ class DataProcessingJob(Help):
                             'Bucket': output_bucket_name,
                             'Key': tmp_file_key
                             }
-                            #bucket = self.aws_manager.s3_resource(output_bucket_name)
                             self.aws_manager.s3_resource.meta.client.copy(copy_source, output_bucket_name,filename)
-                            #bucket.copy(copy_source,f"""s3://{output_bucket_name}/{target_path}/{filename}""")
                             log.info("Deleting temp files")
                             self.aws_manager.s3_client.delete_object(Bucket=output_bucket_name, Key=tmp_file_key)
         except Exception as e:
@@ -230,11 +223,6 @@ def run():
 
     try:
         job.init()
-        source_bucket_name = job.resolved_options["source_bucket_name"]
-        source_key = job.resolved_options["key"]
-        target_bucket_name = job.resolved_options["target_bucket_name"]
-        target_prefix = job.resolved_options["target_folder"]
-
         data = job.get_file_from_path(source_bucket_name
                                       , source_key)
 
